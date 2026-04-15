@@ -16,36 +16,96 @@ export const messageHandler = {
   async handleStreamResponse(response, updateCallback) {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+
     let accumulatedContent = ''
     let accumulatedReasoning = ''
     let startTime = Date.now()
 
+    // 用来缓存“上一次没读完整的内容”
+    let buffer = ''
+
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
 
-      const chunk = decoder.decode(value)
-      console.log(chunk)
-      const lines = chunk.split('\n').filter((line) => line.trim() !== '')
-      console.log(lines)
-      for (const line of lines) {
+      // 流结束时，把 decoder 里剩余的内容也冲出来
+      if (done) {
+        buffer += decoder.decode()
+        break
+      }
+
+      // 这里用 stream: true，表示后面还有数据
+      buffer += decoder.decode(value, { stream: true })
+
+      // 按换行拆分
+      const lines = buffer.split(/\r?\n/)
+
+      // 最后一项可能是不完整的，先留到下一轮
+      buffer = lines.pop() || ''
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim()
+
+        // 跳过空行
+        if (!line) continue
+
+        // 跳过结束标记
         if (line === 'data: [DONE]') continue
-        if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(5))
-          const content = data.choices[0].delta.content || ''
-          const reasoning = data.choices[0].delta.reasoning_content || ''
+
+        // 只处理 data: 开头的行
+        if (!line.startsWith('data: ')) continue
+
+        try {
+          // 注意这里更严谨应该 slice(6)，因为 'data: ' 有 6 个字符
+          const data = JSON.parse(line.slice(6))
+
+          const content = data.choices?.[0]?.delta?.content || ''
+          const reasoning = data.choices?.[0]?.delta?.reasoning_content || ''
 
           accumulatedContent += content
           accumulatedReasoning += reasoning
 
-          // 通过回调更新消息
           updateCallback(
             accumulatedContent,
             accumulatedReasoning,
             data.usage?.completion_tokens || 0,
-            ((data.usage?.completion_tokens || 0) / ((Date.now() - startTime) / 1000)).toFixed(2),
+            (
+              (data.usage?.completion_tokens || 0) /
+              ((Date.now() - startTime) / 1000 || 1)
+            ).toFixed(2),
           )
+        } catch (error) {
+          console.error('解析流式数据失败：', line, error)
         }
+      }
+    }
+
+    // 循环结束后，buffer 里可能还残留最后一行
+    const finalLine = buffer.trim()
+    if (
+      finalLine &&
+      finalLine !== 'data: [DONE]' &&
+      finalLine.startsWith('data: ')
+    ) {
+      try {
+        const data = JSON.parse(finalLine.slice(6))
+
+        const content = data.choices?.[0]?.delta?.content || ''
+        const reasoning = data.choices?.[0]?.delta?.reasoning_content || ''
+
+        accumulatedContent += content
+        accumulatedReasoning += reasoning
+
+        updateCallback(
+          accumulatedContent,
+          accumulatedReasoning,
+          data.usage?.completion_tokens || 0,
+          (
+            (data.usage?.completion_tokens || 0) /
+            ((Date.now() - startTime) / 1000 || 1)
+          ).toFixed(2),
+        )
+      } catch (error) {
+        console.error('解析最后残留数据失败：', finalLine, error)
       }
     }
   },

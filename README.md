@@ -145,10 +145,4 @@ pnpm dev
 4. 可以发送文本消息、上传图片或文件
 5. 使用 Markdown 语法获得更好的排版效果
 
-## 🤝 贡献指南
 
-欢迎提交 Issue 和 Pull Request 来帮助改进项目。
-
-## 📄 许可证
-
-[MIT License](LICENSE)
