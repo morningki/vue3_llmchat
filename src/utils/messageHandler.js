@@ -25,8 +25,9 @@ export const messageHandler = {
       if (done) break
 
       const chunk = decoder.decode(value)
+      console.log(chunk)
       const lines = chunk.split('\n').filter((line) => line.trim() !== '')
-
+      console.log(lines)
       for (const line of lines) {
         if (line === 'data: [DONE]') continue
         if (line.startsWith('data: ')) {

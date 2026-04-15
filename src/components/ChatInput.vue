@@ -98,6 +98,7 @@ const handleFileRemove = (file) => {
       resize="none"
       @keydown.enter.exact.prevent="handleSend"
       @keydown.enter.shift="handleNewline"
+      
     />
     <div class="button-group">
       <el-upload
