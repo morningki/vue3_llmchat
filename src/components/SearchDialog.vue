@@ -138,7 +138,7 @@ const handleRegenerate = async () => {
     <div class="search-header">
       <div class="search-input">
         <input
-          type="text"
+          type="text" 
           v-model="searchText"
           placeholder="提问"
           autofocus

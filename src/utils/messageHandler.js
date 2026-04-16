@@ -68,10 +68,9 @@ export const messageHandler = {
             accumulatedContent,
             accumulatedReasoning,
             data.usage?.completion_tokens || 0,
-            (
-              (data.usage?.completion_tokens || 0) /
-              ((Date.now() - startTime) / 1000 || 1)
-            ).toFixed(2),
+            ((data.usage?.completion_tokens || 0) / ((Date.now() - startTime) / 1000 || 1)).toFixed(
+              2,
+            ),
           )
         } catch (error) {
           console.error('解析流式数据失败：', line, error)
@@ -81,11 +80,7 @@ export const messageHandler = {
 
     // 循环结束后，buffer 里可能还残留最后一行
     const finalLine = buffer.trim()
-    if (
-      finalLine &&
-      finalLine !== 'data: [DONE]' &&
-      finalLine.startsWith('data: ')
-    ) {
+    if (finalLine && finalLine !== 'data: [DONE]' && finalLine.startsWith('data: ')) {
       try {
         const data = JSON.parse(finalLine.slice(6))
 
@@ -99,10 +94,9 @@ export const messageHandler = {
           accumulatedContent,
           accumulatedReasoning,
           data.usage?.completion_tokens || 0,
-          (
-            (data.usage?.completion_tokens || 0) /
-            ((Date.now() - startTime) / 1000 || 1)
-          ).toFixed(2),
+          ((data.usage?.completion_tokens || 0) / ((Date.now() - startTime) / 1000 || 1)).toFixed(
+            2,
+          ),
         )
       } catch (error) {
         console.error('解析最后残留数据失败：', finalLine, error)
