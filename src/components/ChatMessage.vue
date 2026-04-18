@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref } from 'vue'
 import { renderMarkdown } from '@/utils/markdown'
 import { Document, ArrowDown } from '@element-plus/icons-vue'
 // 导入图片资源
@@ -33,6 +33,11 @@ const isCopied = ref(false)
 
 // 添加重新生成的事件
 const emit = defineEmits(['regenerate'])
+const previewVisible = ref(false)
+const previewIndex = ref(0)
+const imagePreviewList = computed(() =>
+  (props.message.files || []).filter((file) => file.type === 'image').map((file) => file.url),
+)
 
 // 添加展开/折叠状态控制
 const isReasoningExpanded = ref(true)
@@ -70,6 +75,18 @@ const handleDislike = () => {
 }
 
 // 添加重新生成的事件
+const openImagePreview = (file) => {
+  const index = imagePreviewList.value.findIndex((url) => url === file.url)
+  if (index === -1) return
+
+  previewIndex.value = index
+  previewVisible.value = true
+}
+
+const closeImagePreview = () => {
+  previewVisible.value = false
+}
+
 const handleRegenerate = () => {
   emit('regenerate')
 }
@@ -113,54 +130,26 @@ const handleThemeToggle = (event) => {
 }
 
 // 修改事件监听的方式
-onMounted(() => {
-  // 使用 MutationObserver 来监听 DOM 变化
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.addedNodes.length) {
-        const codeBlocks = document.querySelectorAll('.code-block')
-        codeBlocks.forEach((block) => {
-          const copyBtn = block.querySelector('[data-action="copy"]')
-          const themeBtn = block.querySelector('[data-action="theme"]')
+const handleCodeActionClick = (event) => {
+  const copyBtn = event.target.closest('[data-action="copy"]')
+  if (copyBtn) {
+    handleCodeCopy(event)
+    return
+  }
 
-          if (copyBtn && !copyBtn._hasListener) {
-            copyBtn.addEventListener('click', handleCodeCopy)
-            copyBtn._hasListener = true
-          }
-          if (themeBtn && !themeBtn._hasListener) {
-            themeBtn.addEventListener('click', handleThemeToggle)
-            themeBtn._hasListener = true
-            // console.log('添加主题切换监听器', { block, themeBtn })
-          }
-        })
-      }
-    })
-  })
+  const themeBtn = event.target.closest('[data-action="theme"]')
+  if (themeBtn) {
+    handleThemeToggle(event)
+  }
+}
 
-  // 开始观察
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  })
-
-  // 组件卸载时清理
-  onUnmounted(() => {
-    observer.disconnect()
-    const codeBlocks = document.querySelectorAll('.code-block')
-    codeBlocks.forEach((block) => {
-      const copyBtn = block.querySelector('[data-action="copy"]')
-      const themeBtn = block.querySelector('[data-action="theme"]')
-
-      copyBtn?.removeEventListener('click', handleCodeCopy)
-      themeBtn?.removeEventListener('click', handleThemeToggle)
-    })
-  })
-})
 
 // 将消息内容转换为 HTML
 const renderedContent = computed(() => {
   return renderMarkdown(props.message.content)
 })
+
+
 
 // 添加 reasoning_content 的渲染
 const renderedReasoning = computed(() => {
@@ -169,74 +158,80 @@ const renderedReasoning = computed(() => {
 })
 </script>
 
-<template>
-  <div class="message-item" :class="{ 'is-mine': message.role === 'user' }">
-    <div class="content">
-      <!-- 文件预览区域 -->
-      <div v-if="message.files && message.files.length > 0" class="files-container">
-        <div v-for="file in message.files" :key="file.url" class="file-item">
-          <!-- 图片预览 -->
-          <div v-if="file.type === 'image'" class="image-preview">
-            <img :src="file.url" :alt="file.name" />
-          </div>
-          <!-- 文件预览 -->
-          <div v-else class="file-preview">
-            <el-icon><Document /></el-icon>
-            <span class="file-name">{{ file.name }}</span>
-            <span class="file-size">{{ (file.size / 1024).toFixed(1) }}KB</span>
+  <template>
+    <div class="message-item" :class="{ 'is-mine': message.role === 'user' }">
+      <div class="content">
+        <!-- 文件预览区域 -->
+        <div v-if="message.files && message.files.length > 0" class="files-container">
+          <div v-for="file in message.files" :key="file.url" class="file-item">
+            <!-- 图片预览 -->
+            <div v-if="file.type === 'image'" class="image-preview" @click="openImagePreview(file)">
+              <img :src="file.url" :alt="file.name" />
+            </div>
+            <!-- 文件预览 -->
+            <div v-else class="file-preview">
+              <el-icon><Document /></el-icon>
+              <span class="file-name">{{ file.name }}</span>
+              <span class="file-size">{{ (file.size / 1024).toFixed(1) }}KB</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- 消息内容 -->
-      <div v-if="message.loading && message.role === 'assistant'" class="thinking-text">
-        <img src="@/assets/photo/加载中.png" alt="loading" class="loading-icon" />
-        <span>内容生成中...</span>
-      </div>
-      <!-- reasoning toggle button -->
-      <div v-if="message.reasoning_content" class="reasoning-toggle" @click="toggleReasoning">
-        <img :src="thinkingIcon" alt="thinking" />
-        <span>深度思考</span>
-        <el-icon class="toggle-icon" :class="{ 'is-expanded': isReasoningExpanded }">
-          <ArrowDown />
-        </el-icon>
-      </div>
-      <!-- reasoning_content -->
-      <div
-        v-if="message.reasoning_content && isReasoningExpanded"
-        class="reasoning markdown-body"
-        v-html="renderedReasoning"
-      ></div>
-      <!-- content -->
-      <div class="bubble markdown-body" v-html="renderedContent"></div>
-      <!-- 只在 AI 助手消息中显示操作按钮和 tokens 信息 -->
-      <div v-if="message.role === 'assistant' && message.loading === false" class="message-actions">
-        <button
-          v-if="isLastAssistantMessage"
-          class="action-btn"
-          @click="handleRegenerate"
-          data-tooltip="重新生成"
-        >
-          <img :src="regenerateIcon" alt="regenerate" />
-        </button>
-        <button class="action-btn" @click="handleCopy" data-tooltip="复制">
-          <img :src="isCopied ? successIcon : copyIcon" alt="copy" />
-        </button>
-        <button class="action-btn" @click="handleLike" data-tooltip="喜欢">
-          <img :src="isLiked ? likeActiveIcon : likeIcon" alt="like" />
-        </button>
-        <button class="action-btn" @click="handleDislike" data-tooltip="不喜欢">
-          <img :src="isDisliked ? dislikeActiveIcon : dislikeIcon" alt="dislike" />
-        </button>
+        <!-- 消息内容 -->
+        <div v-if="message.loading && message.role === 'assistant'" class="thinking-text">
+          <img src="@/assets/photo/加载中.png" alt="loading" class="loading-icon" />
+          <span>内容生成中...</span>
+        </div>
+        <!-- reasoning toggle button -->
+        <div v-if="message.reasoning_content" class="reasoning-toggle" @click="toggleReasoning">
+          <img :src="thinkingIcon" alt="thinking" />
+          <span>深度思考</span>
+          <el-icon class="toggle-icon" :class="{ 'is-expanded': isReasoningExpanded }">
+            <ArrowDown />
+          </el-icon>
+        </div>
+        <!-- reasoning_content -->
+        <div
+          v-if="message.reasoning_content && isReasoningExpanded"
+          class="reasoning markdown-body"
+          v-html="renderedReasoning"
+        ></div>
+        <!-- content -->
+        <div class="bubble markdown-body" v-html="renderedContent" @click="handleCodeActionClick"></div>
+        <!-- 只在 AI 助手消息中显示操作按钮和 tokens 信息 -->
+        <div v-if="message.role === 'assistant' && message.loading === false" class="message-actions">
+          <button
+            v-if="isLastAssistantMessage"
+            class="action-btn"
+            @click="handleRegenerate"
+            data-tooltip="重新生成"
+          >
+            <img :src="regenerateIcon" alt="regenerate" />
+          </button>
+          <button class="action-btn" @click="handleCopy" data-tooltip="复制">
+            <img :src="isCopied ? successIcon : copyIcon" alt="copy" />
+          </button>
+          <button class="action-btn" @click="handleLike" data-tooltip="喜欢">
+            <img :src="isLiked ? likeActiveIcon : likeIcon" alt="like" />
+          </button>
+          <button class="action-btn" @click="handleDislike" data-tooltip="不喜欢">
+            <img :src="isDisliked ? dislikeActiveIcon : dislikeIcon" alt="dislike" />
+          </button>
 
-        <!-- 添加 tokens 信息 -->
-        <span v-if="message.completion_tokens" class="tokens-info">
-          tokens: {{ message.completion_tokens }}, speed: {{ message.speed }} tokens/s
-        </span>
+          <!-- 添加 tokens 信息 -->
+          <span v-if="message.completion_tokens" class="tokens-info">
+            tokens: {{ message.completion_tokens }}, speed: {{ message.speed }} tokens/s
+          </span>
+        </div>
       </div>
     </div>
-  </div>
-</template>
+    <el-image-viewer
+      v-if="previewVisible"
+      :url-list="imagePreviewList"
+      :initial-index="previewIndex"
+      @close="closeImagePreview"
+    />
+  </template>
 
 <style lang="scss" scoped>
 .message-item {

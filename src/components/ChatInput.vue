@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Close, Document } from '@element-plus/icons-vue'
 
 // 输入框的值，使用 ref 实现响应式
@@ -16,6 +16,11 @@ const props = defineProps({
 
 // 定义组件的事件，这里声明了一个 send 事件
 const emit = defineEmits(['send'])
+const previewVisible = ref(false)
+const previewIndex = ref(0)
+const imagePreviewList = computed(() =>
+  fileList.value.filter((file) => file.type === 'image').map((file) => file.url),
+)
 
 // 处理发送消息的方法
 const handleSend = () => {
@@ -64,6 +69,18 @@ const handleFileRemove = (file) => {
     fileList.value.splice(index, 1)
   }
 }
+
+const openImagePreview = (file) => {
+  const index = imagePreviewList.value.findIndex((url) => url === file.url)
+  if (index === -1) return
+
+  previewIndex.value = index
+  previewVisible.value = true
+}
+
+const closeImagePreview = () => {
+  previewVisible.value = false
+}
 </script>
 
 <template>
@@ -72,9 +89,9 @@ const handleFileRemove = (file) => {
     <div v-if="fileList.length > 0" class="preview-area">
       <div v-for="file in fileList" :key="file.url" class="preview-item">
         <!-- 图片预览 -->
-        <div v-if="file.type === 'image'" class="image-preview">
+        <div v-if="file.type === 'image'" class="image-preview" @click="openImagePreview(file)">
           <img :src="file.url" :alt="file.name" />
-          <div class="remove-btn" @click="handleFileRemove(file)">
+          <div class="remove-btn" @click.stop="handleFileRemove(file)">
             <el-icon><Close /></el-icon>
           </div>
         </div>
@@ -98,7 +115,7 @@ const handleFileRemove = (file) => {
       resize="none"
       @keydown.enter.exact.prevent="handleSend"
       @keydown.enter.shift="handleNewline"
-      
+
     />
     <div class="button-group">
       <el-upload
@@ -129,6 +146,12 @@ const handleFileRemove = (file) => {
       </button>
     </div>
   </div>
+  <el-image-viewer
+    v-if="previewVisible"
+    :url-list="imagePreviewList"
+    :initial-index="previewIndex"
+    @close="closeImagePreview"
+  />
 </template>
 
 <style lang="scss" scoped>

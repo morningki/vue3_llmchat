@@ -14,6 +14,8 @@ const handleClickOutside = (event) => {
   // 如果点击的位置不在弹出框内部，则关闭弹出框
   if (wrapper && !wrapper.contains(event.target)) {
     isVisible.value = false
+
+    
   }
 }
 
