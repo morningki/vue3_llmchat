@@ -221,7 +221,7 @@ const renderedReasoning = computed(() => {
           <!-- 添加 tokens 信息 -->
           <span v-if="message.completion_tokens" class="tokens-info">
             tokens: {{ message.completion_tokens }}, speed: {{ message.speed }} tokens/s
-          </span>
+          </span> 
         </div>
       </div>
     </div>
