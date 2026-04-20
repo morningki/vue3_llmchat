@@ -1,8 +1,12 @@
 import { useSettingStore } from '@/stores/setting'
 
+import type { ChatCompletionRequestMessage, ChatCompletionResponse } from '@/types/chat'
+
 const API_BASE_URL = 'https://api.siliconflow.cn/v1'
 
-export const createChatCompletion = async (messages) => {
+export const createChatCompletion = async (
+  messages: ChatCompletionRequestMessage[],
+): Promise<Response | ChatCompletionResponse> => {
   const settingStore = useSettingStore()
   const payload = {
     model: settingStore.settings.model,
@@ -14,7 +18,7 @@ export const createChatCompletion = async (messages) => {
     top_k: settingStore.settings.topK,
   }
 
-  const options = {
+  const options: RequestInit = {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${settingStore.settings.apiKey}`,
@@ -24,7 +28,7 @@ export const createChatCompletion = async (messages) => {
   }
 
   try {
-    const startTime = Date.now() // 记录开始时间
+    const startTime = Date.now()
     const response = await fetch(`${API_BASE_URL}/chat/completions`, options)
 
     if (!response.ok) {
@@ -32,13 +36,14 @@ export const createChatCompletion = async (messages) => {
     }
 
     if (settingStore.settings.stream) {
-      return response // 直接返回响应对象以支持流式读取
-    } else {
-      const data = await response.json()
-      const duration = (Date.now() - startTime) / 1000 // 使用本地计时
-      data.speed = (data.usage.completion_tokens / duration).toFixed(2)
-      return data
+      return response
     }
+
+    const data = (await response.json()) as ChatCompletionResponse
+    const duration = (Date.now() - startTime) / 1000
+    const completionTokens = data.usage?.completion_tokens ?? 0
+    data.speed = (completionTokens / (duration || 1)).toFixed(2)
+    return data
   } catch (error) {
     console.error('Chat API Error:', error)
     throw error

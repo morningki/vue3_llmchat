@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import type { ChatSettings, ModelOption } from '@/types/chat'
+
 export const useSettingStore = defineStore(
   'llm-setting',
   () => {
-    const settings = ref({
+    const settings = ref<ChatSettings>({
       model: 'deepseek-ai/DeepSeek-R1',
       apiKey: '',
       stream: true,
@@ -23,7 +25,7 @@ export const useSettingStore = defineStore(
   },
 )
 
-export const modelOptions = [
+export const modelOptions: ModelOption[] = [
   {
     label: 'DeepSeek-R1',
     value: 'deepseek-ai/DeepSeek-R1',
