@@ -31,6 +31,7 @@
     "@vue/eslint-config-prettier": "^10.1.0",
     "eslint": "^9.18.0",
     "eslint-plugin-vue": "^9.32.0",
+    "globals": "^17.6.0",
     "husky": "^8.0.0",
     "lint-staged": "^15.4.3",
     "pinia-plugin-persistedstate": "^4.2.0",

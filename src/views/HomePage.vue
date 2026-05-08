@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Search, ChatLineRound, Document, Setting } from '@element-plus/icons-vue'
 import SearchDialog from '@/components/SearchDialog.vue'
+import { checkServerHealth } from '@/api/health'
 
 const searchText = ref('')
 const showSearchDialog = ref(false)
@@ -52,6 +53,24 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeydown)
+})
+
+/**
+ * 当前组件挂载完成后，自动调用后端健康检查接口
+ * 这里只是第 1 阶段的临时测试代码
+ * 后面确认前后端连通后，可以删除
+ */
+onMounted(async () => {
+  try {
+    // 调用封装好的 API 方法
+    const result = await checkServerHealth()
+
+    // 在浏览器控制台打印后端返回结果
+    console.log('后端健康检查成功：', result)
+  } catch (error) {
+    // 如果请求失败，在控制台打印错误
+    console.error('后端健康检查失败：', error)
+  }
 })
 </script>
 
