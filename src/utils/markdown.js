@@ -19,8 +19,8 @@ const md = new MarkdownIt({
       try {
         const highlighted = hljs.highlight(str, { language: lang, ignoreIllegals: true }).value
         return `<div class="code-block"><div class="code-header"><span class="code-lang">${lang}</span><div class="code-actions"><button class="code-action-btn" data-action="copy" data-tooltip="复制"><img src="${copyIcon}" alt="copy" /></button><button class="code-action-btn" data-action="theme" data-tooltip="切换主题"><img src="${darkIcon}" alt="theme" data-light-icon="${lightIcon}" data-dark-icon="${darkIcon}" /></button></div></div><pre class="hljs"><code>${highlighted}</code></pre></div>`
-        // eslint-disable-next-line no-unused-vars, no-empty
-      } catch (__) {}
+        // eslint-disable-next-line no-empty
+      } catch {}
     }
     return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
   },
