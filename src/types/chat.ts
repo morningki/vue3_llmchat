@@ -8,6 +8,12 @@ export interface ChatFile {
   size: number
 }
 
+export interface ChatCompletionResult {
+  response: Response | ChatCompletionResponse
+  isStream: boolean
+}
+
+
 export interface ChatMessage {
   id: number | string
   role: MessageRole
@@ -31,7 +37,6 @@ export interface Conversation {
 
 export interface ChatSettings {
   model: string
-  apiKey: string
   stream: boolean
   maxTokens: number
   temperature: number

@@ -1,9 +1,11 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useSettingStore, modelOptions } from '@/stores/setting'
+import { useChatStore } from '@/stores/chat'
 import { QuestionFilled } from '@element-plus/icons-vue'
 
 const settingStore = useSettingStore()
+const chatStore = useChatStore()
 
 // 控制抽屉显示
 const visible = ref(false)
@@ -31,6 +33,8 @@ watch(
 
 // 打开抽屉
 const openDrawer = () => {
+  if (chatStore.isLoading) return
+
   visible.value = true
 }
 

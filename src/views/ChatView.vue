@@ -6,7 +6,6 @@ import { computed, ref, watch, nextTick, onMounted } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { messageHandler } from '@/utils/messageHandler'
 import { createChatCompletion } from '@/utils/api'
-import { useSettingStore } from '@/stores/setting'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import PopupMenu from '@/components/PopupMenu.vue'
 import DialogEdit from '@/components/DialogEdit.vue'
@@ -16,8 +15,6 @@ import { useRouter } from 'vue-router'
 const chatStore = useChatStore()
 const currentMessages = computed(() => chatStore.currentMessages)
 const isLoading = computed(() => chatStore.isLoading)
-const settingStore = useSettingStore()
-
 // 获取消息容器
 const messagesContainer = ref(null)
 // 监听消息变化，滚动到底部
@@ -59,12 +56,12 @@ const handleSend = async (messageContent) => {
 
     // 调用API获取回复
     const messages = chatStore.currentMessages.map(({ role, content }) => ({ role, content }))
-    const response = await createChatCompletion(messages)
+    const { response, isStream } = await createChatCompletion(messages)
 
     // 使用封装的响应处理函数
     await messageHandler.handleResponse(
       response,
-      settingStore.settings.stream,
+      isStream,
       (content, reasoning_content, tokens, speed) => {
         chatStore.updateLastMessage(content, reasoning_content, tokens, speed)
       },
@@ -144,7 +141,7 @@ const handleBack = async () => {
 
       <div class="header-right">
         <el-tooltip content="设置" placement="top">
-          <button class="action-btn" @click="settingDrawer.openDrawer()">
+          <button class="action-btn" :disabled="isLoading" @click="settingDrawer.openDrawer()">
             <img src="@/assets/photo/设置.png" alt="settings" />
           </button>
         </el-tooltip>
@@ -350,6 +347,20 @@ const handleBack = async () => {
 
         img {
           filter: brightness(0.4);
+        }
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        box-shadow: none;
+      }
+
+      &:disabled:hover {
+        background: none;
+
+        img {
+          filter: none;
         }
       }
     }

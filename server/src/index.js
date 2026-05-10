@@ -2,7 +2,6 @@
 import express from 'express'    // 后端框架
 import cors from 'cors'          // 解决跨域
 import dotenv from 'dotenv'      // 读取 .env 环境变量
-import healthRouter from './routes/health.js'  // 导入健康检查接口
 import chatRouter from './routes/chat.js'
 
 dotenv.config() // 让 .env 文件生效
@@ -22,7 +21,6 @@ app.use(cors({
 app.use(express.json())
 
 // 挂载接口：访问 /api/health 就能用
-app.use('/api', healthRouter)
 app.use('/api', chatRouter)
 
 // 访问不存在的接口 → 返回404
