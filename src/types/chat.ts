@@ -6,11 +6,52 @@ export interface ChatFile {
   url: string
   type: ChatFileType
   size: number
+  uploadedDocument?: UploadedDocument
 }
 
 export interface ChatCompletionResult {
   response: Response | ChatCompletionResponse
   isStream: boolean
+}
+
+export interface ChunkPreview {
+  index: number
+  content: string
+  start?: number
+  end?: number
+  length: number
+}
+
+export interface UploadedDocument {
+  originalName: string
+  filename: string
+  extension: string
+  mimeType: string
+  size: number
+  readable: boolean
+  textPreview: string
+  textLength: number
+  textMessage: string
+  pageCount: number | null
+  chunkCount: number
+  chunksPreview: ChunkPreview[]
+  limits: {
+    allowedExtensions: string[]
+    maxFileSize: number
+  }
+}
+
+export interface UploadResponse {
+  code: number
+  message: string
+  data: UploadedDocument
+}
+
+export interface UploadErrorResponse {
+  code: number
+  message: string
+  error?: string
+  errorCode?: string
 }
 
 

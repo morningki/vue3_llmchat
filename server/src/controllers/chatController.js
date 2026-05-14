@@ -10,16 +10,16 @@ const isValidMessage = (message) => {
 }
 
 const setStreamHeaders = (res) => {
-  // 告诉客户端这是 SSE / 文本流响应
+  // 告诉客户端这是 SSE / 文本流响应。
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
 
-  // 禁止缓存，避免流式内容被浏览器或代理攒在一起
+  // 禁止缓存，避免流式内容被浏览器或代理攒在一起。
   res.setHeader('Cache-Control', 'no-cache')
 
-  // 保持连接，便于持续写入模型输出
+  // 保持连接，便于持续写入模型输出。
   res.setHeader('Connection', 'keep-alive')
 
-  // 针对 Nginx 等代理，提示不要缓冲响应
+  // 针对 Nginx 等代理，提示不要缓冲响应。
   res.setHeader('X-Accel-Buffering', 'no')
 }
 

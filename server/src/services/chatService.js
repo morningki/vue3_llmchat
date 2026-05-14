@@ -17,7 +17,7 @@ const getLlmConfig = () => {
 const buildChatPayload = (payload) => {
   const { defaultModel } = getLlmConfig()
 
-  // 统一构造发给上游大模型的请求体，避免流式和非流式重复写参数
+  // 统一构造发给上游大模型的请求体，避免流式和非流式重复维护参数。
   return {
     model: payload.model || defaultModel,
     messages: payload.messages,
@@ -93,10 +93,12 @@ export const streamChatService = async (payload, res) => {
         break
       }
 
-      // 原样转发上游大模型的 SSE chunk，前端 messageHandler 会继续解析 data: ...
+      // 原样转发上游 SSE chunk，前端 messageHandler 会继续解析 data: ...
       res.write(value)
     }
-  } finally {
+
     res.end()
+  } finally {
+    reader.releaseLock()
   }
 }

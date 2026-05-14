@@ -17,6 +17,7 @@ router.post('/upload', (req, res) => {
           code: 400,
           message: 'Upload failed',
           error: error.message,
+          errorCode: error.code || 'MULTER_ERROR',
         })
       }
 
@@ -25,6 +26,7 @@ router.post('/upload', (req, res) => {
         code: 400,
         message: 'Upload failed',
         error: error.message,
+        errorCode: error.code || 'UNKNOWN_ERROR',
       })
     }
 
